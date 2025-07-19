@@ -24,9 +24,19 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Material Design Icons -->
     <link href="https://cdn.jsdelivr.net/npm/@mdi/font/css/materialdesignicons.min.css" rel="stylesheet">
+    <!-- Animate -->
+    <script src="https://cdn.jsdelivr.net/npm/animejs/lib/anime.iife.min.js"></script>
+
     <style>
         [x-cloak] {
             display: none !important;
+        }
+
+        .tab-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
         }
     </style>
     <script>
@@ -37,7 +47,8 @@
         function tabs() {
             const Z = window.z || window.zod || window.Zod;
             if (!Z) console.error("Zod is not loaded!");
-
+            const { animate } = window.anime;
+            if (!animate) console.error("Anime.js is not loaded!");
             return {
                 tab: 'signin',
                 signinEmail: '',
@@ -66,7 +77,27 @@
                 },
 
                 switchTab(newTab) {
-                    this.tab = newTab;
+                    const { animate } = window.anime;
+                    const currentTab = this.tab;
+                    const currentElement = this.$refs[`${currentTab}Tab`];
+                    const newElement = this.$refs[`${newTab}Tab`];
+
+                    if (currentElement && newElement) {
+                        // fade out
+                        animate(currentElement, { opacity: [1, 0] }, { duration: 250, easing: 'ease-in-out' });
+
+                        setTimeout(() => {
+                            currentElement.style.display = 'none'; // ซ่อนแท็บเก่า
+                            newElement.style.display = 'block';   // แสดงแท็บใหม่
+                            newElement.style.opacity = 0;
+
+                            animate(newElement, { opacity: [0, 1] }, { duration: 300, easing: 'ease-in-out' });
+                            this.tab = newTab;
+                        }, 250);
+                    } else {
+                        this.tab = newTab;
+                    }
+
                     const url = new URL(window.location);
                     url.searchParams.set('tab', newTab === 'signin' ? 'sign-in' : 'sign-up');
                     window.history.replaceState({}, '', url);
@@ -190,7 +221,7 @@
         </div>
 
         <!-- Sign In -->
-        <div x-show="tab === 'signin'" x-transition x-cloak>
+        <div x-show="tab === 'signin'" x-transition x-cloak x-ref="signinTab">
             <div class="mb-4">
                 <input type="text" placeholder="Enter email or username" x-model="signinEmail"
                     class="w-full bg-gray-700 p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-400 focus:bg-gray-600 transition-all duration-300">
@@ -224,7 +255,7 @@
         </div>
 
         <!-- Sign Up -->
-        <div x-show="tab === 'signup'" x-transition x-cloak>
+        <div x-show="tab === 'signup'" x-transition x-cloak x-ref="signupTab">
             <div class="mb-3">
                 <input type="text" placeholder="Enter your username" x-model="signupUsername"
                     class="w-full bg-gray-700 p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-400 focus:bg-gray-600 transition-all duration-300">
