@@ -73,7 +73,8 @@
                     const params = new URLSearchParams(window.location.search);
                     const tabParam = params.get('tab');
                     if (tabParam === 'sign-in') this.tab = 'signin';
-                    if (tabParam === 'sign-up') this.tab = 'signup';
+                    else if (tabParam === 'sign-up') this.tab = 'signup';
+                    else if (tabParam === 'forgot-password') this.tab = 'forgot';
                 },
 
                 switchTab(newTab) {
@@ -170,9 +171,19 @@
                 openForgotModal() {
                     this.forgotEmail = '';
                     this.showForgotModal = true;
+                    this.tab = 'forgot';
+                    const url = new URL(window.location);
+                    url.searchParams.set('tab', 'forgot-password');
+                    window.history.replaceState({}, '', url);
                 },
                 closeForgotModal() {
+                    this.forgotEmail = '';
                     this.showForgotModal = false;
+                    this.tab = 'signin';
+                    const url = new URL(window.location);
+                    url.searchParams.set('tab', 'sign-in');
+                    window.history.replaceState({}, '', url);
+
                 },
                 sendResetLink() {
                     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.forgotEmail)) {
@@ -298,7 +309,7 @@
     </div>
 
     <!-- Modal Forgot Password -->
-    <div x-show="showForgotModal" x-cloak
+    <div x-show="tab === 'forgot'" x-transition x-cloak
         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" x-transition>
         <div class="bg-gray-800 rounded-xl p-6 w-full max-w-sm shadow-lg relative">
             <button @click="closeForgotModal" class="absolute top-2 right-2 text-gray-400 hover:text-white text-xl">
