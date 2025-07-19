@@ -136,6 +136,14 @@
 
                     if (result.success) {
                         this.showToast('success', `Sign In as ${isEmail ? 'Email' : 'Username'}`);
+
+                        // **Redirect หลังจาก login สำเร็จ**
+                        const redirectUrl = new URLSearchParams(window.location.search).get('redirect_url');
+                        if (redirectUrl) {
+                            setTimeout(() => {
+                                window.location.href = redirectUrl;
+                            }, 1500);
+                        }
                     } else {
                         this.showToast('error', result.error.issues.map(e => e.message).join("\n"));
                     }
@@ -199,7 +207,8 @@
 </head>
 
 <body class="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
-    <div class="w-full max-w-md bg-gray-800/90 backdrop-blur-sm text-white p-8 rounded-2xl shadow-2xl">
+    <div class="w-full max-w-md bg-transparent backdrop-blur-0 text-white p-8 rounded-2xl shadow-none
+            sm:bg-gray-800/90 sm:backdrop-blur-sm sm:shadow-2xl">
 
         <div class="text-center mb-6">
             <h1 class="text-2xl font-bold mb-2">Single Sign On (SSO)</h1>
@@ -328,6 +337,8 @@
             </div>
         </div>
     </div>
+
 </body>
+
 
 </html>
