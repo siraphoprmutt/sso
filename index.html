@@ -30,6 +30,10 @@
         }
     </style>
     <script>
+        const CONFIG = {
+            apiUrl: 'https://api.nolowcodes.com/sso',
+        }
+
         function tabs() {
             const Z = window.z || window.zod || window.Zod;
             if (!Z) console.error("Zod is not loaded!");
@@ -45,7 +49,11 @@
                 showSigninPassword: false,
                 showSignupPassword: false,
                 showSignupConfirm: false,
-
+                apiUrl: CONFIG.apiUrl,
+                // ฟังก์ชันเริ่มต้นเมื่อโหลดหน้า
+                init() {
+                    this.initTabFromUrl();
+                },
                 initTabFromUrl() {
                     const params = new URLSearchParams(window.location.search);
                     const tabParam = params.get('tab');
@@ -74,19 +82,29 @@
 
                 validateSignIn() {
                     if (!Z) return this.showToast('error', 'Zod not loaded!');
+
+                    const loginInput = this.signinEmail.trim();
+                    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginInput);
+
                     const schema = Z.object({
                         email: Z.string().min(1, "Email/username is required"),
                         password: Z.string()
                             .min(6, "Password must be at least 6 characters")
                             .regex(/^[A-Za-z0-9!@#$%^&*()_+]+$/, "Password must be English letters, numbers or symbols")
                     });
+
                     const result = schema.safeParse({
-                        email: this.signinEmail.trim(),
+                        email: loginInput,
                         password: this.signinPassword.trim()
                     });
-                    result.success
-                        ? this.showToast('success', 'Sign In Success!')
-                        : this.showToast('error', result.error.issues.map(e => e.message).join("\n"));
+
+                    if (result.success) {
+                        this.showToast('success', `Sign In as ${isEmail ? 'Email' : 'Username'}`);
+                        // ส่งข้อมูลไปหลังบ้าน เช่น:
+                        // fetch('/api/login', { method: 'POST', body: JSON.stringify({ type: isEmail ? 'email' : 'username', value: loginInput, password: this.signinPassword.trim() }) })
+                    } else {
+                        this.showToast('error', result.error.issues.map(e => e.message).join("\n"));
+                    }
                 },
 
                 validateSignUp() {
@@ -94,7 +112,7 @@
                     const schema = Z.object({
                         username: Z.string()
                             .min(3, "Username must be at least 3 characters")
-                            .regex(/^[A-Za-z0-9_]+$/, "Username can only contain English letters, numbers, and underscore"),
+                            .regex(/^(?=.*[A-Za-z])[A-Za-z0-9_]+$/, "Username must contain at least one English letter (A-Z or a-z)"),
                         email: Z.string().email("Invalid email format"),
                         password: Z.string()
                             .min(6, "Password must be at least 6 characters")
