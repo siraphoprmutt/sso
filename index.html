@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en" x-data="tabs()" x-init="initTabFromUrl()" class="bg-gray-900">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- ใช้ Favicon หลัก -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+    <!-- รองรับ PNG สำหรับเบราว์เซอร์ที่ไม่รองรับ .ico -->
+    <link rel="icon" type="image/png" sizes="16x16" href="https://nolowcodes.com/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://nolowcodes.com/favicon-32x32.png">
+
+    <!-- Apple Touch Icon สำหรับ iOS -->
+    <link rel="apple-touch-icon" href="https://nolowcodes.com/apple-touch-icon.png">
+
+    <!-- Web Manifest สำหรับ PWA -->
+    <link rel="manifest" href="https://nolowcodes.com/site.webmanifest">
+    <title>SSO | NO&LOW CODES</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- ใช้ Zod เวอร์ชัน 3.22.4 -->
+    <script src="https://cdn.jsdelivr.net/npm/zod@3.22.4/lib/index.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Material Design Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font/css/materialdesignicons.min.css" rel="stylesheet">
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
+    <script>
+        function tabs() {
+            const Z = window.z || window.zod || window.Zod;
+            if (!Z) console.error("Zod is not loaded!");
+
+            return {
+                tab: 'signin',
+                signinEmail: '',
+                signinPassword: '',
+                signupUsername: '',
+                signupEmail: '',
+                signupPassword: '',
+                signupConfirm: '',
+                showSigninPassword: false,
+                showSignupPassword: false,
+                showSignupConfirm: false,
+
+                initTabFromUrl() {
+                    const params = new URLSearchParams(window.location.search);
+                    const tabParam = params.get('tab');
+                    if (tabParam === 'sign-in') this.tab = 'signin';
+                    if (tabParam === 'sign-up') this.tab = 'signup';
+                },
+
+                switchTab(newTab) {
+                    this.tab = newTab;
+                    const url = new URL(window.location);
+                    url.searchParams.set('tab', newTab === 'signin' ? 'sign-in' : 'sign-up');
+                    window.history.replaceState({}, '', url);
+                },
+
+                showToast(icon, message) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: icon,
+                        title: message,
+                        showConfirmButton: false,
+                        timer: 2500,
+                        timerProgressBar: true
+                    });
+                },
+
+                validateSignIn() {
+                    if (!Z) return this.showToast('error', 'Zod not loaded!');
+                    const schema = Z.object({
+                        email: Z.string().min(1, "Email/username is required"),
+                        password: Z.string()
+                            .min(6, "Password must be at least 6 characters")
+                            .regex(/^[A-Za-z0-9!@#$%^&*()_+]+$/, "Password must be English letters, numbers or symbols")
+                    });
+                    const result = schema.safeParse({
+                        email: this.signinEmail.trim(),
+                        password: this.signinPassword.trim()
+                    });
+                    result.success
+                        ? this.showToast('success', 'Sign In Success!')
+                        : this.showToast('error', result.error.issues.map(e => e.message).join("\n"));
+                },
+
+                validateSignUp() {
+                    if (!Z) return this.showToast('error', 'Zod not loaded!');
+                    const schema = Z.object({
+                        username: Z.string()
+                            .min(3, "Username must be at least 3 characters")
+                            .regex(/^[A-Za-z0-9_]+$/, "Username can only contain English letters, numbers, and underscore"),
+                        email: Z.string().email("Invalid email format"),
+                        password: Z.string()
+                            .min(6, "Password must be at least 6 characters")
+                            .regex(/^[A-Za-z0-9!@#$%^&*()_+]+$/, "Password must be English letters, numbers or symbols"),
+                        confirm: Z.string()
+                    }).refine((data) => data.password === data.confirm, {
+                        message: "Passwords do not match",
+                        path: ["confirm"]
+                    });
+
+                    const result = schema.safeParse({
+                        username: this.signupUsername.trim(),
+                        email: this.signupEmail.trim(),
+                        password: this.signupPassword.trim(),
+                        confirm: this.signupConfirm.trim()
+                    });
+                    result.success
+                        ? this.showToast('success', 'Sign Up Success!')
+                        : this.showToast('error', result.error.issues.map(e => e.message).join("\n"));
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+    <div class="w-full max-w-md bg-gray-800/90 backdrop-blur-sm text-white p-8 rounded-2xl shadow-2xl">
+
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold mb-2">Single Sign On (SSO)</h1>
+        </div>
+        <div class="flex justify-center mb-4">
+            <img src="https://public.nolowcodes.com/images/logo.png" alt="SSO Logo"
+                class="w-16 h-16 rounded-full shadow-lg">
+        </div>
+
+        <!-- Divider -->
+        <div class="flex items-center my-4">
+            <hr class="flex-grow border-gray-600">
+            <span class="px-2 text-gray-400 text-sm">Please sign in or sign up to continue</span>
+            <hr class="flex-grow border-gray-600">
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex justify-center mb-8">
+            <button @click="switchTab('signin')"
+                :class="tab === 'signin' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-gray-400'"
+                class="px-4 pb-2 text-lg font-semibold transition-colors duration-300">
+                Sign In
+            </button>
+            <span class="text-gray-500 mx-3">|</span>
+            <button @click="switchTab('signup')"
+                :class="tab === 'signup' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-gray-400'"
+                class="px-4 pb-2 text-lg font-semibold transition-colors duration-300">
+                Sign Up
+            </button>
+        </div>
+
+        <!-- Sign In -->
+        <div x-show="tab === 'signin'" x-transition x-cloak>
+            <div class="mb-4">
+                <input type="text" placeholder="Enter email or username" x-model="signinEmail"
+                    class="w-full bg-gray-700 p-3 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 focus:bg-gray-600 transition-all duration-300">
+            </div>
+            <div class="mb-4 relative">
+                <input :type="showSigninPassword ? 'text' : 'password'" placeholder="Enter your password"
+                    x-model="signinPassword"
+                    class="w-full bg-gray-700 p-3 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 focus:bg-gray-600 transition-all duration-300 pr-10">
+                <span @click="showSigninPassword = !showSigninPassword"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-white">
+                    <i :class="showSigninPassword ? 'mdi mdi-eye-off' : 'mdi mdi-eye'"></i>
+                </span>
+            </div>
+            <!-- Divider -->
+            <div class="flex items-center my-4">
+                <hr class="flex-grow border-gray-600">
+                <span class="px-2 text-gray-400 text-sm">Click here to sign in</span>
+                <hr class="flex-grow border-gray-600">
+            </div>
+            <button @click="validateSignIn"
+                class="w-full bg-purple-500 hover:bg-purple-600 active:scale-[0.98] p-3 rounded-lg font-semibold transition-transform duration-200 shadow-md hover:shadow-lg">
+                Continue
+            </button>
+        </div>
+
+        <!-- Sign Up -->
+        <div x-show="tab === 'signup'" x-transition x-cloak>
+            <div class="mb-3">
+                <input type="text" placeholder="Enter your username" x-model="signupUsername"
+                    class="w-full bg-gray-700 p-3 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 focus:bg-gray-600 transition-all duration-300">
+            </div>
+            <div class="mb-3">
+                <input type="email" placeholder="Enter your email address" x-model="signupEmail"
+                    class="w-full bg-gray-700 p-3 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 focus:bg-gray-600 transition-all duration-300">
+            </div>
+            <div class="mb-4 relative">
+                <input :type="showSignupPassword ? 'text' : 'password'" placeholder="Enter your password"
+                    x-model="signupPassword"
+                    class="w-full bg-gray-700 p-3 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 focus:bg-gray-600 transition-all duration-300 pr-10">
+                <span @click="showSignupPassword = !showSignupPassword"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-white">
+                    <i :class="showSignupPassword ? 'mdi mdi-eye-off' : 'mdi mdi-eye'"></i>
+                </span>
+            </div>
+            <div class="mb-4 relative">
+                <input :type="showSignupConfirm ? 'text' : 'password'" placeholder="Confirm your password"
+                    x-model="signupConfirm"
+                    class="w-full bg-gray-700 p-3 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 focus:bg-gray-600 transition-all duration-300 pr-10">
+                <span @click="showSignupConfirm = !showSignupConfirm"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-white">
+                    <i :class="showSignupConfirm ? 'mdi mdi-eye-off' : 'mdi mdi-eye'"></i>
+                </span>
+            </div>
+
+            <!-- Divider -->
+            <div class="flex items-center my-4">
+                <hr class="flex-grow border-gray-600">
+                <span class="px-2 text-gray-400 text-sm">Click here to sign up</span>
+                <hr class="flex-grow border-gray-600">
+            </div>
+
+            <button @click="validateSignUp"
+                class="w-full bg-purple-500 hover:bg-purple-600 active:scale-[0.98] p-3 rounded-lg font-semibold transition-transform duration-200 shadow-md hover:shadow-lg">
+                Continue
+            </button>
+
+        </div>
+    </div>
+</body>
+
+</html>
