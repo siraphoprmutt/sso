@@ -50,7 +50,11 @@
                 showSignupPassword: false,
                 showSignupConfirm: false,
                 apiUrl: CONFIG.apiUrl,
-                // ฟังก์ชันเริ่มต้นเมื่อโหลดหน้า
+
+                // สำหรับ Modal Forgot Password
+                showForgotModal: false,
+                forgotEmail: '',
+
                 init() {
                     this.initTabFromUrl();
                 },
@@ -100,8 +104,7 @@
 
                     if (result.success) {
                         this.showToast('success', `Sign In as ${isEmail ? 'Email' : 'Username'}`);
-                        // ส่งข้อมูลไปหลังบ้าน เช่น:
-                        // fetch('/api/login', { method: 'POST', body: JSON.stringify({ type: isEmail ? 'email' : 'username', value: loginInput, password: this.signinPassword.trim() }) })
+                        // fetch API ที่นี่
                     } else {
                         this.showToast('error', result.error.issues.map(e => e.message).join("\n"));
                     }
@@ -132,6 +135,24 @@
                     result.success
                         ? this.showToast('success', 'Sign Up Success!')
                         : this.showToast('error', result.error.issues.map(e => e.message).join("\n"));
+                },
+
+                // ฟังก์ชัน Forgot Password
+                openForgotModal() {
+                    this.forgotEmail = '';
+                    this.showForgotModal = true;
+                },
+                closeForgotModal() {
+                    this.showForgotModal = false;
+                },
+                sendResetLink() {
+                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.forgotEmail)) {
+                        this.showToast('error', 'Please enter a valid email');
+                        return;
+                    }
+                    // ตัวอย่างส่ง API
+                    this.showToast('success', 'Reset link sent to your email');
+                    this.closeForgotModal();
                 }
             }
         }
@@ -197,6 +218,13 @@
                 Continue
             </button>
         </div>
+        <!-- ปุ่ม Forgot Password -->
+        <div class="mt-4 text-center">
+            <button @click="openForgotModal"
+                class="text-sm text-gray-400 hover:text-purple-400 transition-colors duration-200">
+                Forgot Password?
+            </button>
+        </div>
 
         <!-- Sign Up -->
         <div x-show="tab === 'signup'" x-transition x-cloak>
@@ -238,7 +266,28 @@
                 class="w-full bg-purple-500 hover:bg-purple-600 active:scale-[0.98] p-3 rounded-lg font-semibold transition-transform duration-200 shadow-md hover:shadow-lg">
                 Continue
             </button>
+        </div>
+    </div>
 
+    <!-- Modal Forgot Password -->
+    <div x-show="showForgotModal" x-cloak
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" x-transition>
+        <div class="bg-gray-800 rounded-xl p-6 w-full max-w-sm shadow-lg relative">
+            <button @click="closeForgotModal" class="absolute top-2 right-2 text-gray-400 hover:text-white text-xl">
+                &times;
+            </button>
+            <h2 class="text-xl font-semibold text-white mb-4">Forgot Password</h2>
+            <input type="email" x-model="forgotEmail" placeholder="Enter your email"
+                class="w-full bg-gray-700 p-3 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 mb-4">
+            <div class="flex justify-end gap-3">
+                <button @click="closeForgotModal" class="px-4 py-2 bg-gray-600 rounded-lg hover:bg-gray-700 transition">
+                    Cancel
+                </button>
+                <button @click="sendResetLink"
+                    class="px-4 py-2 bg-purple-500 rounded-lg hover:bg-purple-600 transition">
+                    Send Link
+                </button>
+            </div>
         </div>
     </div>
 </body>
